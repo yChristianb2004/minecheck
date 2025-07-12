@@ -1,18 +1,22 @@
 import { MinecraftProfile } from '../types';
 
-// Usar API alternativa que funciona melhor para verificação
-const MINECRAFT_API_BASE = 'https://api.minetools.eu/uuid';
+// Usar apenas o proxy local para a API Mojang (evita CORS e instabilidade)
+const MOJANG_API_BASE = '/mojang-api/users/profiles/minecraft';
 
 export async function checkUsernameAvailability(username: string): Promise<boolean> {
   try {
-    // Primeira tentativa: API Minetools (mais confiável)
-    const response = await fetch(`${MINECRAFT_API_BASE}/${username}`);
-    
-    if (response.status === 404) {
+    // Chama o endpoint proxy do Vite
+    const response = await fetch(`${MOJANG_API_BASE}/${username}`, {
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+
+    if (response.status === 204 || response.status === 404) {
       // Username não encontrado = disponível
       return true;
     }
-    
+
     if (response.ok) {
       const data = await response.json();
       // Se retornou dados válidos, o username está ocupado
@@ -22,49 +26,17 @@ export async function checkUsernameAvailability(username: string): Promise<boole
       // Se não tem ID/UUID, pode estar disponível
       return true;
     }
-    
-    // Fallback: tentar API do Mojang diretamente
-    return await checkWithMojangAPI(username);
-    
-  } catch (error) {
-    console.warn('Erro na primeira API, tentando fallback:', error);
-    // Fallback para API do Mojang
-    return await checkWithMojangAPI(username);
-  }
-}
 
-async function checkWithMojangAPI(username: string): Promise<boolean> {
-  try {
-    // Tentar API do Mojang diretamente (pode ter CORS issues)
-    const response = await fetch(`https://api.mojang.com/users/profiles/minecraft/${username}`, {
-      mode: 'cors',
-      headers: {
-        'Accept': 'application/json',
-      }
-    });
-    
-    if (response.status === 204 || response.status === 404) {
-      return true; // Username disponível
-    }
-    
-    if (response.ok) {
-      const data = await response.json();
-      return !data || !data.id; // Se não tem ID, está disponível
-    }
-    
-    // Se der erro de CORS ou outro erro, assumir que pode estar disponível
-    // mas marcar como erro para o usuário saber
-    throw new Error('Unable to verify - may be available');
-    
+    // Se der erro, assume indisponível
+    return false;
   } catch (error) {
     // Para usernames muito comuns, assumir que estão ocupados
     const commonUsernames = ['admin', 'test', 'player', 'user', 'minecraft', 'notch', 'steve', 'alex'];
     if (commonUsernames.includes(username.toLowerCase())) {
       return false;
     }
-    
-    // Para outros casos, assumir que pode estar disponível mas com erro
-    throw error;
+    // Para outros casos, assume indisponível
+    return false;
   }
 }
 

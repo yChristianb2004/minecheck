@@ -12,22 +12,18 @@ export async function checkUsernameAvailability(username: string): Promise<boole
       }
     });
 
-    if (response.status === 204 || response.status === 404) {
+    // 204 = encontrado (ocupado), 200 = encontrado (ocupado), 404 = não encontrado (disponível)
+    if (response.status === 404) {
       // Username não encontrado = disponível
       return true;
     }
 
-    if (response.ok) {
-      const data = await response.json();
-      // Se retornou dados válidos, o username está ocupado
-      if (data && (data.id || data.uuid)) {
-        return false;
-      }
-      // Se não tem ID/UUID, pode estar disponível
-      return true;
+    if (response.status === 204 || response.ok) {
+      // Username encontrado = ocupado
+      return false;
     }
 
-    // Se der erro, assume indisponível
+    // Se der erro inesperado, assume indisponível
     return false;
   } catch (error) {
     // Para usernames muito comuns, assumir que estão ocupados

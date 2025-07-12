@@ -12,18 +12,11 @@ export async function checkUsernameAvailability(username: string): Promise<boole
       }
     });
 
-    // 204 = encontrado (ocupado), 200 = encontrado (ocupado), 404 = não encontrado (disponível)
+    // 404 = não encontrado (disponível), qualquer outro status = ocupado
     if (response.status === 404) {
-      // Username não encontrado = disponível
       return true;
     }
-
-    if (response.status === 204 || response.ok) {
-      // Username encontrado = ocupado
-      return false;
-    }
-
-    // Se der erro inesperado, assume indisponível
+    // Qualquer outro status (incluindo 200, 204, etc) = ocupado
     return false;
   } catch (error) {
     // Para usernames muito comuns, assumir que estão ocupados

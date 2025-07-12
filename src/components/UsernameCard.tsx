@@ -70,7 +70,7 @@ export default function UsernameCard({ result, onCopy, beautyScore }: UsernameCa
                   ? 'Available' 
                   : error
                     ? 'Error checking'
-                    : 'Já registrado'
+                    : 'Já registrado' // sempre vermelho para indisponível (404)
               }
             </p>
             {typeof beautyScore === 'number' && (
